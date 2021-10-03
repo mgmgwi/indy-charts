@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  indy-ledger-browser:
+  - apiVersion: v2
+    appVersion: sha-37fa4367
+    created: "2021-10-03T06:41:02.41689427Z"
+    description: A Helm chart for Kubernetes
+    digest: 626e86c1b5696c068be57eb8c639d4e9e0e998c4d9ed7d60a70a85137bebbc54
+    name: indy-ledger-browser
+    type: application
+    urls:
+    - https://github.com/Spherity/charts/releases/download/indy-ledger-browser-0.1.1/indy-ledger-browser-0.1.1.tgz
+    version: 0.1.1
+generated: "2021-10-03T06:41:02.237719673Z"
