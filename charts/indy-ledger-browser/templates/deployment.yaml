@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "indy-ledger-browser.fullname" . }}
+  labels:
+    {{- include "indy-ledger-browser.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "indy-ledger-browser.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "indy-ledger-browser.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "indy-ledger-browser.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if ( or .Values.persistence.enabled .Values.extraInitContainers) }}
+      initContainers:
+      {{- end }}
+      {{- if ( and .Values.persistence.enabled .Values.initChownData.enabled ) }}
+        - name: init-chown-data
+          {{- if .Values.initChownData.image.sha }}
+          image: "{{ .Values.initChownData.image.repository }}:{{ .Values.initChownData.image.tag }}@sha256:{{ .Values.initChownData.image.sha }}"
+          {{- else }}
+          image: "{{ .Values.initChownData.image.repository }}:{{ .Values.initChownData.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.initChownData.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          command: ["chown", "-R", "{{ .Values.securityContext.runAsUser }}:{{ .Values.securityContext.runAsGroup }}", "/home/indy/.indy_client"]
+          resources:
+      {{ toYaml .Values.initChownData.resources | indent 6 }}
+          volumeMounts:
+            - name: storage
+              mountPath: "/home/indy/.indy_client"
+            - name: ledger
+              mountPath: "/home/indy/ledger"
+            - name: log
+              mountPath: "/home/indy/log"
+      {{- if .Values.persistence.subPath }}
+              subPath: {{ .Values.persistence.subPath }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.extraInitContainers }}
+      {{ toYaml .Values.extraInitContainers | indent 2 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - ./scripts/start_webserver.sh
+          env:
+            - name: GENESIS_URL
+              value: {{ .Values.config.genesis_url }}
+            - name: IP
+              value: "0.0.0.0"
+            - name: PORT
+              value: "{{ .Values.service.port }}"
+            - name: REGISTER_NEW_DIDS
+              value: {{ .Values.config.register_new_dids | quote }}
+            - name: LEDGER_INSTANCE_NAME
+              value: {{ .Values.config.ledger_instance_name }}
+            - name: INFO_SITE_TEXT
+              value: {{ .Values.config.info_site_text }}
+            - name: INFO_SITE_URL
+              value: {{ .Values.config.info_site_url }}
+            - name: LEDGER_CACHE_PATH
+              value: /home/indy/.indy_client/ledger-cache/ledger-cache-db
+            - name: LEDGER_SEED
+              valueFrom:
+                secretKeyRef:
+                  key: seed
+                  name: {{ include "indy-ledger-browser.fullname" . }}-wallet-credentials
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 5
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 5
+            timeoutSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /home/indy/.indy_client
+            name: storage
+          - name: ledger
+            mountPath: "/home/indy/ledger"
+          - name: log
+            mountPath: "/home/indy/log"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if and .Values.persistence.enabled (eq .Values.persistence.type "pvc") }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "indy-ledger-browser.fullname" .) }}
+      {{- else if and .Values.persistence.enabled (eq .Values.persistence.type "statefulset") }}
+      # nothing
+      {{- else }}
+        - name: storage
+      {{- if .Values.persistence.inMemory.enabled }}
+          emptyDir:
+            medium: Memory
+      {{- if .Values.persistence.inMemory.sizeLimit }}
+            sizeLimit: {{ .Values.persistence.inMemory.sizeLimit }}
+      {{- end -}}
+      {{- else }}
+          emptyDir: {}
+      {{- end -}}
+      {{- end -}}
+        - name: ledger
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
