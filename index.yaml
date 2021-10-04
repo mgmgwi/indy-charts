@@ -1,14 +1,19 @@
 apiVersion: v1
 entries:
-  indy-ledger-browser:
+  acapy:
   - apiVersion: v2
-    appVersion: sha-37fa4367
-    created: "2021-10-03T06:41:02.41689427Z"
-    description: A Helm chart for Kubernetes
-    digest: 626e86c1b5696c068be57eb8c639d4e9e0e998c4d9ed7d60a70a85137bebbc54
-    name: indy-ledger-browser
+    appVersion: py36-1.16-1_0.7.1
+    created: "2021-10-04T16:16:33.171645346Z"
+    description: A Helm chart for Hyperledger Aries Cloud Agent Python (ACA-Py)
+    digest: 6960a776a43eb3b513859a682e3c4786bce6bfef5b4b5873fdc36e0d07c6ab88
+    home: https://github.com/hyperledger/aries-cloudagent-python
+    maintainers:
+    - email: niclas.mietz@spherity.com
+      name: Niclas Mietz
+      url: https://spherity.com
+    name: acapy
     type: application
     urls:
-    - https://github.com/Spherity/charts/releases/download/indy-ledger-browser-0.1.1/indy-ledger-browser-0.1.1.tgz
-    version: 0.1.1
-generated: "2021-10-03T06:41:02.237719673Z"
+    - https://github.com/Spherity/charts/releases/download/acapy-0.3.0/acapy-0.3.0.tgz
+    version: 0.3.0
+generated: "2021-10-04T16:16:33.012895268Z"
