@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "acapy.fullname" . }}
+  labels:
+    {{- include "acapy.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "acapy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "acapy.selectorLabels" . | nindent 8 }}
+    spec:
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "acapy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: agent
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+          - /bin/bash
+          args: [
+           "-cx",
+           "aca-py start \
+           --auto-provision \
+           --arg-file acapy-static-args.yml \
+           --inbound-transport http '0.0.0.0' {{ .Values.service.port }} \
+           --genesis-url '{{ .Values.config.browserURL  }}/genesis' \
+           --endpoint https://{{ include "acapy.host" . }} \
+           --wallet-storage-type 'postgres_storage' \
+           --wallet-name '{{ .Release.Name }}' \
+           --wallet-key \"$(WALLET_KEY)\" \
+           --wallet-storage-config '{\"url\":\"{{ .Values.config.postgres.url }}\",\"max_connections\":{{ .Values.config.postgres.maxConnections }},\"wallet_scheme\":\"$(WALLET_SCHEME)\"}' \
+           --wallet-storage-creds '{\"account\":\"$(POSTGRES_ACCOUNT)\",\"password\":\"$(POSTGRES_PASSWORD)\",\"admin_account\":\"$(POSTGRES_ADMIN_ACCOUNT)\",\"admin_password\":\"$(POSTGRES_ADMIN_PASSWORD)\"}' \
+           --seed \"$(WALLET_SEED)\" \
+           --admin '0.0.0.0' {{ .Values.service.admin.port }} \
+          {{- if not .Values.config.adminURLApiKey }}
+           --admin-insecure-mode \
+          {{- else }}
+           --admin-api-key \"$(ADMIN_API_KEY)\" \
+          {{- end }}
+           --label {{ .Release.Name }} \
+          {{- if .Values.config.tails.enabled }}
+           --tails-server-base-url {{ include "acapy.tails.baseUrl" . }} \
+           --tails-server-upload-url {{ include "acapy.tails.uploadUrl" . }} \
+          {{- end }}
+          {{- if .Values.config.readOnlyMode }}
+           --read-only-ledger \
+          {{- end }}
+          {{- if .Values.config.multitenant.enabled }}
+           --multitenant \
+          {{- end }}
+          {{- if .Values.config.multitenant.admin.enabled }}
+           --multitenant-admin \
+          {{- end }}
+          {{- if .Values.config.jwtSecret }}
+           --jwt-secret \"$(JWT_SECRET)\"
+          {{- end }}
+           "
+          ]
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port}}
+              protocol: TCP
+            - name: admin
+              containerPort: {{ .Values.service.admin.port}}
+              protocol: TCP
+          env:
+          - name: RUST_BACKTRACE
+            value: "1"
+          - name: WALLET_SCHEME
+            value: {{ .Values.config.walletScheme }}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}-db
+                key: password
+          - name: POSTGRES_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}-db
+                key: account
+          - name: POSTGRES_ADMIN_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}-db
+                key: admin-account
+          - name: POSTGRES_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}-db
+                key: admin-password
+          - name: WALLET_SEED
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}
+                key: wallet-seed
+          - name: WALLET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}
+                key: wallet-key
+          - name: ADMIN_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}
+                key: adminURLApiKey
+          {{- if .Values.config.jwtSecret }}
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "acapy.fullname" . }}
+                key: jwtSecret
+          {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - "curl -A \"acapy-probe\" --header \"X-API-Key: $ADMIN_API_KEY\" \"http://localhost:{{ .Values.service.admin.port }}/status/live\""
+            initialDelaySeconds: 45
+            periodSeconds: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - "curl -A \"acapy-probe\" --header \"X-API-Key: $ADMIN_API_KEY\" \"http://localhost:{{ .Values.service.admin.port }}/status/ready\""
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+          - name: config
+            mountPath: "/home/indy/acapy-static-args.yml"
+            subPath: "acapy-static-args.yml"
+            readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "acapy.fullname" . }}
+            items:
+            - key: "acapy-static-args.yaml"
+              path: "acapy-static-args.yml"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

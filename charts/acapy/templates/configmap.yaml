@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "acapy.fullname" . }}
+  labels:
+    {{- include "acapy.labels" . | nindent 4 }}
+data:
+  acapy-static-args.yaml: |
+    auto-accept-invites: {{ .Values.config.staticArgs.autoAcceptInvites }}
+    auto-accept-requests: {{ .Values.config.staticArgs.autoAcceptRequests }}
+    auto-respond-messages: {{ .Values.config.staticArgs.autoRespondMessages }}
+    auto-respond-credential-proposal: {{ .Values.config.staticArgs.autoRespondCredentialProposal }}
+    auto-respond-credential-offer: {{ .Values.config.staticArgs.autoRespondCredentialOffer }}
+    auto-respond-credential-request: {{ .Values.config.staticArgs.autoRespondCredentialRequest }}
+    auto-respond-presentation-proposal: {{ .Values.config.staticArgs.autoRespondPresentationProposal }}
+    auto-respond-presentation-request: {{ .Values.config.staticArgs.autoRespondPresentationRequest }}
+    auto-store-credential: {{ .Values.config.staticArgs.autoStoreCredential }}
+    auto-verify-presentation: {{ .Values.config.staticArgs.autoVerifyPresentation }}
+    auto-ping-connection: {{ .Values.config.staticArgs.autoPingConnection }}
+    auto-provision: {{ .Values.config.staticArgs.autoProvision }}
+    monitor-ping: {{ .Values.config.staticArgs.monitorPing }}
+    public-invites: {{ .Values.config.staticArgs.publicInvites }}
+    plugin: 'aries_cloudagent.messaging.jsonld'
+    outbound-transport: http
+    wallet-type: 'indy'
+    log-level: {{ .Values.config.staticArgs.logLevel }}

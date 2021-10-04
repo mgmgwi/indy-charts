@@ -1,0 +1,169 @@
+# Default values for acapy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: bcgovimages/aries-cloudagent
+  pullPolicy: IfNotPresent
+  # --  Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8030
+  admin:
+    port: 8031
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: test-904f.acapy.spherity.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+   - secretName: acapy-tls-secret
+     hosts:
+       - test-904f.acapy.spherity.com
+  admin:
+    enabled: true
+    className: "nginx"
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: test-904f-api.acapy.spherity.com
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+    - secretName: acapy-tls-secret
+      hosts:
+        - test-904f-api.acapy.spherity.com
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    memory: 512Mi
+  requests:
+    cpu: 300m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+existingSecret: {}
+
+
+agent:
+  useExistingSecret: ""
+  db:
+    useExistingSecret: ""
+
+config:
+  multitenant:
+    enabled: false
+    admin:
+      enabled: false
+  jwtSecret: ""
+  # DatabasePerWallet - each wallet has its own database
+  # MultiWalletSingleTable - all wallets are stored in single table in single database. Each wallet has its own connection pool.
+  # MultiWalletSingleTableSharedPool - all wallets are stored in single table in single database. The plugin will create only 1 connection pool reused by all wallets. This can be useful if intend to open many different wallets. Postgres has by default limitation of ~100 simultaneous connections and using this strategy you can limit number of DB connections significantly.
+  walletScheme: DatabasePerWallet
+  adminURLApiKey: ""
+  # The agent seed, 32 characters. Will be generated if not defined here
+  agentSeed: ""
+  walletKey: ""
+  browserURL: ""
+  tails:
+    # -- Set to true to enable revocation (external tails server required)
+    enabled: false
+
+    # -- Override the otherwise ledger-specifically generated base URL of the external tails server
+    baseUrlOverride: ""
+
+    # -- Override the otherwise ledger-specifically generated upload URL of the external tails server
+    uploadUrlOverride: ""
+  staticArgs:
+    autoAcceptInvites: true
+    autoAcceptRequests: true
+    autoRespondMessages: true
+    autoRespondCredentialProposal: true
+    autoRespondCredentialOffer: true
+    autoRespondCredentialRequest: true
+    autoRespondPresentationProposal: true
+    autoRespondPresentationRequest: true
+    autoStoreCredential: true
+    autoVerifyPresentation: true
+    autoPingConnection: true
+    autoProvision: true
+    monitorPing: true
+    publicInvites: true
+    logLevel: info
+  #  This configuration maps to the indy sdk postgres plugin (PostgresConfig)
+  # {"url":"localhost:5432","wallet_scheme":"MultiWalletSingleTable"}
+  # https://github.com/hyperledger/indy-sdk/blob/master/experimental/plugins/postgres_storage/src/lib.rs#L1758
+  postgres:
+    enabled: true
+    # {"url":"databasehost","wallet_scheme":"MultiWalletSingleTable"}
+    url: databasehost
+    dbName: databaseName
+    maxConnections: 5
+    # {"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}
+    account: postgres
+    # $ pwgen -s 32  -1
+    password: securePassword
+    admin:
+      account: postgres
+      password: secureAdminPassword
+
+deploymentStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: "50%"
+    maxUnavailable: 0
