@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  ingressSuffix: ""
+
 replicaCount: 1
 
 image:
@@ -101,34 +104,44 @@ existingSecret: {}
 
 
 agent:
+  # agent.useExistingSecret -- provides an external kubernetes secret with the agent secrets
   useExistingSecret: ""
   db:
+  # agent.db.useExistingSecret -- provides an external kubernetes secret with the database connection information
     useExistingSecret: ""
 
 config:
   multitenant:
+  # config.multitenant.enabled -- enables in Acapy Multitenant mode
     enabled: false
+    # config.multitenant.admin.enabled -- enables in Admin API for Acapy Multitenant mode
     admin:
       enabled: false
+  # config.jwtSecret -- seed for the JWT Authentication in Mutltitenant Mode
   jwtSecret: ""
-  # DatabasePerWallet - each wallet has its own database
-  # MultiWalletSingleTable - all wallets are stored in single table in single database. Each wallet has its own connection pool.
-  # MultiWalletSingleTableSharedPool - all wallets are stored in single table in single database. The plugin will create only 1 connection pool reused by all wallets. This can be useful if intend to open many different wallets. Postgres has by default limitation of ~100 simultaneous connections and using this strategy you can limit number of DB connections significantly.
+  # config.walletScheme -- seed for the JWT Authentication in Mutltitenant Mode
+  # DatabasePerWallet -- each wallet has its own database
+  # MultiWalletSingleTable -- all wallets are stored in single table in single database. Each wallet has its own connection pool.
+  # MultiWalletSingleTableSharedPool -- all wallets are stored in single table in single database. The plugin will create only 1 connection pool reused by all wallets. This can be useful if intend to open many different wallets. Postgres has by default limitation of ~100 simultaneous connections and using this strategy you can limit number of DB connections significantly.
   walletScheme: DatabasePerWallet
+  # config.adminURLApiKey -- Set an API Key for the Admin API Authentication
   adminURLApiKey: ""
   # The agent seed, 32 characters. Will be generated if not defined here
+  # config.agentSeed -- Initial Seed DID for Agent should be an Endorser
   agentSeed: ""
+  # config.walletKey -- Key for Encrpting all Database Credentials for the targeted Wallet
   walletKey: ""
+  # config.browserURL -- For fetching the genesis file for connecting to the nodes
   browserURL: ""
   tails:
     # -- Set to true to enable revocation (external tails server required)
     enabled: false
 
     # -- Override the otherwise ledger-specifically generated base URL of the external tails server
-    baseUrlOverride: ""
+    baseUrl: ""
 
     # -- Override the otherwise ledger-specifically generated upload URL of the external tails server
-    uploadUrlOverride: ""
+    uploadUrl: ""
   staticArgs:
     autoAcceptInvites: true
     autoAcceptRequests: true
@@ -148,18 +161,27 @@ config:
   #  This configuration maps to the indy sdk postgres plugin (PostgresConfig)
   # {"url":"localhost:5432","wallet_scheme":"MultiWalletSingleTable"}
   # https://github.com/hyperledger/indy-sdk/blob/master/experimental/plugins/postgres_storage/src/lib.rs#L1758
+
   postgres:
-    enabled: true
+    # config.postgres.enabled -- Enables External Postgres Storage instead of sqlite in the agent
+    enabled: false
     # {"url":"databasehost","wallet_scheme":"MultiWalletSingleTable"}
-    url: databasehost
+    # https://github.com/hyperledger/indy-sdk/blob/master/experimental/plugins/postgres_storage/src/lib.rs#L1758
+    # config.postgres.url -- External Postgres Host
+    url: databasehost.com:5432
+    # config.postgres.dbName -- External Postgres Database Name
     dbName: databaseName
+    # config.postgres.maxConnections -- External Postgres max Conections
     maxConnections: 5
     # {"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}
+    # config.postgres.account -- External Postgres User Account for using the Wallet
     account: postgres
-    # $ pwgen -s 32  -1
+    # config.postgres.password -- External Postgres User Password for using the Wallet
     password: securePassword
     admin:
+      # config.postgres.admin.account -- External Postgres User Password for creating the Wallet
       account: postgres
+      # config.postgres.admin.password -- External Postgres User Password for creating the Wallet
       password: secureAdminPassword
 
 deploymentStrategy:

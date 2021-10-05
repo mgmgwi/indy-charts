@@ -65,8 +65,8 @@ Create the name of the service account to use
 Get the password secret.
 */}}
 {{- define "acapy.secretName" -}}
-{{- if .Values.acapy.existingSecret -}}
-    {{- printf "%s" (tpl .Values.acapy.existingSecret $) -}}
+{{- if .Values.agent.useExistingSecret -}}
+    {{- printf "%s" (tpl .Values.agent.useExistingSecret $) -}}
 {{- else -}}
     {{- printf "%s" (include "acapy.fullname" .) -}}
 {{- end -}}
@@ -92,33 +92,6 @@ Return seed
     {{- randAlphaNum 32 -}}
 {{- end -}}
 {{- end -}}
-
-{{/*
-Return acapy initialization call
-*/}}
-{{- define "acapy.registerLedger" -}}
-{{- if or (eq .Values.global.ledger "bosch-test") (eq .Values.global.ledger "bcovrin-test") -}}
-curl -d '{\"seed\":\"$(WALLET_SEED)\", \"role\":\"TRUST_ANCHOR\", \"alias\":\"{{ include "bpa.fullname" . }}\"}' -X POST {{ include "bpa.ledgerBrowser" . }}/register;
-{{- else if eq .Values.global.ledger "idu" -}}
-identifier=`curl --header 'Content-Type: application/json' -d '{\"seed\":\"$(WALLET_SEED)\", \"role\":\"ENDORSER\", \"send\":true}' -X POST node-agent-registrar.md.svc.cluster.local/register | tr { '\n' | tr , '\n' | tr } '\n' | grep \"identifier\" | awk  -F'\"' '{print $4}'`;
-{{- end -}}
-{{- end -}}
-
-{{/*
-generate tails baseUrl
-*/}}
-{{- define "acapy.tails.baseUrl" -}}
-{{- $tailsBaseUrl := dict "bosch-test" "https://tails-dev.vonx.io" "bcovrin-test" "https://tails-test.vonx.io" "idu" (printf "https://tails%s" .Values.global.ingressSuffix) -}}
-{{ .Values.acapy.tails.baseUrlOverride| default ( get $tailsBaseUrl .Values.global.ledger ) }}
-{{- end }}
-{{/*
-generate tails uploadUrl
-*/}}
-{{- define "acapy.tails.uploadUrl" -}}
-{{- $tailsUploadUrl:= dict "bosch-test" "https://tails-dev.vonx.io" "bcovrin-test" "https://tails-test.vonx.io" "idu" "http://idu-tails:6543" -}}
-{{ .Values.acapy.tails.uploadUrlOverride| default ( get $tailsUploadUrl .Values.global.ledger ) }}
-{{- end }}
-
 
 {{/*
 generate hosts if not overriden

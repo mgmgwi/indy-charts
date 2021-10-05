@@ -1,10 +1,10 @@
 # acapy
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: py36-1.16-1_0.7.1](https://img.shields.io/badge/AppVersion-py36--1.16--1_0.7.1-informational?style=flat-square)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: py36-1.16-1_0.7.1](https://img.shields.io/badge/AppVersion-py36--1.16--1_0.7.1-informational?style=flat-square)
 
 A Helm chart for Hyperledger Aries Cloud Agent Python (ACA-Py)
 
-**Homepage:** <https://github.com/hyperledger/aries-cloudagent-python>
+**Homepage:** <https://spherity.com>
 
 ## Maintainers
 
@@ -17,26 +17,26 @@ A Helm chart for Hyperledger Aries Cloud Agent Python (ACA-Py)
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
-| agent.db.useExistingSecret | string | `""` |  |
-| agent.useExistingSecret | string | `""` |  |
+| agent.db.useExistingSecret | string | `""` | provides an external kubernetes secret with the database connection information |
+| agent.useExistingSecret | string | `""` | provides an external kubernetes secret with the agent secrets |
 | autoscaling.enabled | bool | `false` |  |
 | autoscaling.maxReplicas | int | `100` |  |
 | autoscaling.minReplicas | int | `1` |  |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
-| config.adminURLApiKey | string | `""` |  |
-| config.agentSeed | string | `""` |  |
-| config.browserURL | string | `""` |  |
-| config.jwtSecret | string | `""` |  |
-| config.multitenant.admin.enabled | bool | `false` |  |
-| config.multitenant.enabled | bool | `false` |  |
-| config.postgres.account | string | `"postgres"` |  |
-| config.postgres.admin.account | string | `"postgres"` |  |
-| config.postgres.admin.password | string | `"secureAdminPassword"` |  |
-| config.postgres.dbName | string | `"databaseName"` |  |
-| config.postgres.enabled | bool | `true` |  |
-| config.postgres.maxConnections | int | `5` |  |
-| config.postgres.password | string | `"securePassword"` |  |
-| config.postgres.url | string | `"databasehost"` |  |
+| config.adminURLApiKey | string | `""` | Set an API Key for the Admin API Authentication |
+| config.agentSeed | string | `""` | Initial Seed DID for Agent should be an Endorser |
+| config.browserURL | string | `""` | For fetching the genesis file for connecting to the nodes |
+| config.jwtSecret | string | `""` | seed for the JWT Authentication in Mutltitenant Mode |
+| config.multitenant.admin.enabled | bool | `false` | enables in Admin API for Acapy Multitenant mode |
+| config.multitenant.enabled | bool | `false` | enables in Acapy Multitenant mode |
+| config.postgres.account | string | `"postgres"` | External Postgres User Account for using the Wallet |
+| config.postgres.admin.account | string | `"postgres"` | External Postgres User Password for creating the Wallet |
+| config.postgres.admin.password | string | `"secureAdminPassword"` | External Postgres User Password for creating the Wallet |
+| config.postgres.dbName | string | `"databaseName"` | External Postgres Database Name |
+| config.postgres.enabled | bool | `false` | Enables External Postgres Storage instead of sqlite in the agent |
+| config.postgres.maxConnections | int | `5` | External Postgres max Conections |
+| config.postgres.password | string | `"securePassword"` | External Postgres User Password for using the Wallet |
+| config.postgres.url | string | `"databasehost.com:5432"` | External Postgres Host |
 | config.staticArgs.autoAcceptInvites | bool | `true` |  |
 | config.staticArgs.autoAcceptRequests | bool | `true` |  |
 | config.staticArgs.autoPingConnection | bool | `true` |  |
@@ -52,16 +52,17 @@ A Helm chart for Hyperledger Aries Cloud Agent Python (ACA-Py)
 | config.staticArgs.logLevel | string | `"info"` |  |
 | config.staticArgs.monitorPing | bool | `true` |  |
 | config.staticArgs.publicInvites | bool | `true` |  |
-| config.tails.baseUrlOverride | string | `""` | Override the otherwise ledger-specifically generated base URL of the external tails server |
+| config.tails.baseUrl | string | `""` | Override the otherwise ledger-specifically generated base URL of the external tails server |
 | config.tails.enabled | bool | `false` | Set to true to enable revocation (external tails server required) |
-| config.tails.uploadUrlOverride | string | `""` | Override the otherwise ledger-specifically generated upload URL of the external tails server |
-| config.walletKey | string | `""` |  |
-| config.walletScheme | string | `"DatabasePerWallet"` |  |
+| config.tails.uploadUrl | string | `""` | Override the otherwise ledger-specifically generated upload URL of the external tails server |
+| config.walletKey | string | `""` | Key for Encrpting all Database Credentials for the targeted Wallet |
+| config.walletScheme | string | `"DatabasePerWallet"` | seed for the JWT Authentication in Mutltitenant Mode DatabasePerWallet -- each wallet has its own database MultiWalletSingleTable -- all wallets are stored in single table in single database. Each wallet has its own connection pool. MultiWalletSingleTableSharedPool -- all wallets are stored in single table in single database. The plugin will create only 1 connection pool reused by all wallets. This can be useful if intend to open many different wallets. Postgres has by default limitation of ~100 simultaneous connections and using this strategy you can limit number of DB connections significantly. |
 | deploymentStrategy.rollingUpdate.maxSurge | string | `"50%"` |  |
 | deploymentStrategy.rollingUpdate.maxUnavailable | int | `0` |  |
 | deploymentStrategy.type | string | `"RollingUpdate"` |  |
 | existingSecret | object | `{}` |  |
 | fullnameOverride | string | `""` |  |
+| global.ingressSuffix | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"bcgovimages/aries-cloudagent"` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
