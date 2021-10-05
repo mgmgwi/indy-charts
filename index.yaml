@@ -3,10 +3,10 @@ entries:
   acapy:
   - apiVersion: v2
     appVersion: py36-1.16-1_0.7.1
-    created: "2021-10-04T16:16:33.171645346Z"
+    created: "2021-10-05T06:16:47.62057585Z"
     description: A Helm chart for Hyperledger Aries Cloud Agent Python (ACA-Py)
-    digest: 6960a776a43eb3b513859a682e3c4786bce6bfef5b4b5873fdc36e0d07c6ab88
-    home: https://github.com/hyperledger/aries-cloudagent-python
+    digest: 8822cb06e66a4420152ecfb93f9a8f9b896d2d36de396164dfcd141a9888a65f
+    home: https://spherity.com
     maintainers:
     - email: niclas.mietz@spherity.com
       name: Niclas Mietz
@@ -14,6 +14,6 @@ entries:
     name: acapy
     type: application
     urls:
-    - https://github.com/Spherity/charts/releases/download/acapy-0.3.0/acapy-0.3.0.tgz
-    version: 0.3.0
-generated: "2021-10-04T16:16:33.012895268Z"
+    - https://github.com/Spherity/charts/releases/download/acapy-0.4.0/acapy-0.4.0.tgz
+    version: 0.4.0
+generated: "2021-10-05T06:16:47.380419004Z"
